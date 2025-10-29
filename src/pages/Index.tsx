@@ -46,6 +46,9 @@ const Index = () => {
     setCurrentPage('search');
   };
 
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewTitle, setPreviewTitle] = useState<string>('');
+
   useEffect(() => {
     if (currentPage === 'search' && hasSearched && searchQuery) {
       const initGoogleSearch = () => {
@@ -61,6 +64,39 @@ const Index = () => {
             if (element) {
               element.execute(searchQuery);
             }
+
+            setTimeout(() => {
+              const results = document.querySelectorAll('.gsc-webResult');
+              results.forEach((result) => {
+                const titleEl = result.querySelector('.gs-title');
+                const urlEl = result.querySelector('.gs-visibleUrl');
+                
+                if (titleEl && urlEl && !result.querySelector('.preview-btn')) {
+                  const url = (urlEl as HTMLElement).textContent || '';
+                  const title = (titleEl as HTMLElement).textContent || '';
+                  
+                  const btnContainer = document.createElement('div');
+                  btnContainer.className = 'preview-btn mt-2 flex gap-2';
+                  btnContainer.innerHTML = `
+                    <button class="preview-button" data-url="${url}" data-title="${title}">
+                      👁️ Просмотр
+                    </button>
+                  `;
+                  
+                  result.appendChild(btnContainer);
+                  
+                  const previewBtn = btnContainer.querySelector('.preview-button') as HTMLButtonElement;
+                  if (previewBtn) {
+                    previewBtn.onclick = (e) => {
+                      e.preventDefault();
+                      const fullUrl = url.startsWith('http') ? url : 'https://' + url;
+                      setPreviewUrl(fullUrl);
+                      setPreviewTitle(title);
+                    };
+                  }
+                }
+              });
+            }, 1500);
           } catch (error) {
             console.log('Error initializing Google search:', error);
           }
@@ -124,6 +160,33 @@ const Index = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {previewUrl && (
+          <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="w-full h-full max-w-7xl max-h-[90vh] bg-card border-2 border-primary/30 rounded-lg shadow-[0_0_50px_rgba(0,255,136,0.3)] flex flex-col">
+              <div className="flex items-center justify-between p-4 border-b border-primary/20">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-orbitron font-semibold text-primary truncate">{previewTitle}</h3>
+                  <p className="text-sm text-muted-foreground truncate">{previewUrl}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setPreviewUrl(null)}
+                  className="hover:bg-primary/10 ml-4 flex-shrink-0"
+                >
+                  <Icon name="X" size={24} className="text-muted-foreground" />
+                </Button>
+              </div>
+              <iframe
+                src={previewUrl}
+                className="flex-1 w-full border-0"
+                title={previewTitle}
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+              />
+            </div>
           </div>
         )}
 

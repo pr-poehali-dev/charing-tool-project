@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Logo from '@/components/Logo';
 import Navigation from '@/components/Navigation';
 import SearchBar from '@/components/SearchBar';
@@ -46,6 +46,21 @@ const Index = () => {
     setCurrentPage('search');
   };
 
+  useEffect(() => {
+    if (currentPage === 'search' && hasSearched) {
+      const timer = setTimeout(() => {
+        const searchContainer = document.getElementById('google-search-container');
+        if (searchContainer && window.google) {
+          const searchElement = window.google.search.cse.element.getElement('google-search');
+          if (searchElement) {
+            searchElement.execute(searchQuery);
+          }
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [currentPage, hasSearched, searchQuery]);
+
   return (
     <div className="min-h-screen bg-background cyber-grid">
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b-2 border-primary/20 shadow-[0_5px_20px_rgba(0,255,136,0.1)]">
@@ -91,19 +106,9 @@ const Index = () => {
           <div className="space-y-6">
             <SearchBar onSearch={handleSearch} />
             {hasSearched && (
-              <>
-                <div className="flex items-center justify-between">
-                  <p className="text-muted-foreground">
-                    Найдено результатов: <span className="text-primary font-semibold">{mockResults.length}</span>
-                  </p>
-                  <p className="text-sm text-muted-foreground">Запрос: "{searchQuery}"</p>
-                </div>
-                <div className="space-y-4">
-                  {mockResults.map((result, index) => (
-                    <SearchResult key={index} {...result} index={index} />
-                  ))}
-                </div>
-              </>
+              <div id="google-search-container" className="gcse-container">
+                <div className="gcse-search"></div>
+              </div>
             )}
           </div>
         )}

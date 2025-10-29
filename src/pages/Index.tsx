@@ -47,16 +47,27 @@ const Index = () => {
   };
 
   useEffect(() => {
-    if (currentPage === 'search' && hasSearched) {
-      const timer = setTimeout(() => {
-        const searchContainer = document.getElementById('google-search-container');
-        if (searchContainer && window.google) {
-          const searchElement = window.google.search.cse.element.getElement('google-search');
-          if (searchElement) {
-            searchElement.execute(searchQuery);
+    if (currentPage === 'search' && hasSearched && searchQuery) {
+      const initGoogleSearch = () => {
+        if (window.google && window.google.search && window.google.search.cse) {
+          try {
+            window.google.search.cse.element.render({
+              div: 'google-search-container',
+              tag: 'searchresults-only',
+              gname: 'searchresults'
+            });
+            
+            const element = window.google.search.cse.element.getElement('searchresults');
+            if (element) {
+              element.execute(searchQuery);
+            }
+          } catch (error) {
+            console.log('Error initializing Google search:', error);
           }
         }
-      }, 100);
+      };
+
+      const timer = setTimeout(initGoogleSearch, 500);
       return () => clearTimeout(timer);
     }
   }, [currentPage, hasSearched, searchQuery]);
@@ -106,8 +117,11 @@ const Index = () => {
           <div className="space-y-6">
             <SearchBar onSearch={handleSearch} />
             {hasSearched && (
-              <div id="google-search-container" className="gcse-container">
-                <div className="gcse-search"></div>
+              <div className="mt-6">
+                <p className="text-sm text-muted-foreground mb-4">Запрос: "{searchQuery}"</p>
+                <div id="google-search-container" className="gcse-container">
+                  <div className="gcse-searchresults-only" data-queryParameterName="search"></div>
+                </div>
               </div>
             )}
           </div>
